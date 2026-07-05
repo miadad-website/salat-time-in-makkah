@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>নামাজের সময়সূচী</title>
+
+    <!-- Tiro Bangla Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #002366;
+            color: #ffffff;
+            font-family: "Tiro Bangla", serif;
+            text-align: center;
+            padding: 20px;
+            line-height: 1.8;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            font-size: 30px;
+            font-weight: 700;
+        }
+
+        #times {
+            max-width: 500px;
+            margin: auto;
+        }
+
+        ul {
+            list-style: none;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.15);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        li {
+            padding: 16px;
+            font-size: 22px;
+            border-bottom: 1px solid rgba(255,255,255,.15);
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        p {
+            margin-top: 15px;
+            font-size: 18px;
+        }
+
+        .loading {
+            font-size: 22px;
+            margin-top: 30px;
+        }
+
+        @media (max-width:600px) {
+
+            h2 {
+                font-size: 26px;
+            }
+
+            li {
+                font-size: 20px;
+            }
+
+            p {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>🕌 হানাফি মাযহাব অনুযায়ী নামাজের সময়সূচী</h2>
+
+<div id="times" class="loading">
+    লোড হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন।
+</div>
+
+<script>
+
+// ইংরেজি সংখ্যা বাংলায় রূপান্তর
+function toBanglaNumber(str) {
+    return str.replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+}
+
+// ২৪ ঘণ্টা থেকে ১২ ঘণ্টা
+function to12Hour(time24) {
+
+    const cleanTime = time24.split(" ")[0];
+
+    let [hour, minute] = cleanTime.split(":").map(Number);
+
+    const period = hour >= 12 ? "PM" : "AM";
+
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+
+    return toBanglaNumber(
+        `${hour}:${String(minute).padStart(2,"0")} ${period}`
+    );
+}
+
+async function fetchPrayerTimes() {
+
+    const latitude = 21.422487;
+    const longitude = 39.826206;
+
+    const today = new Date();
+
+    const date =
+        String(today.getDate()).padStart(2,"0") + "-" +
+        String(today.getMonth()+1).padStart(2,"0") + "-" +
+        today.getFullYear();
+
+    const url =
+        `https://api.aladhan.com/v1/timings/${date}?latitude=${latitude}&longitude=${longitude}&method=1&school=1`;
+
+    try {
+
+        const response = await fetch(url);
+
+        if(!response.ok){
+            throw new Error("API Error");
+        }
+
+        const data = await response.json();
+
+        const t = data.data.timings;
+
+        document.getElementById("times").innerHTML = `
+            <ul>
+                <li>🌅 ফজর : <strong>${to12Hour(t.Fajr)}</strong></li>
+                <li>☀️ যোহর : <strong>${to12Hour(t.Dhuhr)}</strong></li>
+                <li>🌇 আসর : <strong>${to12Hour(t.Asr)}</strong></li>
+                <li>🌆 মাগরিব : <strong>${to12Hour(t.Maghrib)}</strong></li>
+                <li>🌙 এশা : <strong>${to12Hour(t.Isha)}</strong></li>
+            </ul>
+
+            <p>📅 <strong>হিজরি তারিখ:</strong> ${toBanglaNumber(data.data.date.hijri.date)}</p>
+
+            <p>📍 <strong>স্থান:</strong> মক্কা, সৌদি আরব</p>
+        `;
+
+    } catch(error) {
+
+        document.getElementById("times").innerHTML =
+            "<p>❌ নামাজের সময়সূচী লোড করা যায়নি।</p>";
+
+        console.error(error);
+    }
+}
+
+fetchPrayerTimes();
+
+</script>
+<footer>
+<h4> ডেভলপ করেছেন </h4>
+<h3> মিয়াদাদ হক আব্দুল্লাহ </h3>
+<h4> মক্কা আল মুকাররামাহ </h4>
+</footer>
+
+</body>
+
+</html>
+
